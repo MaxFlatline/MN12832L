@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>..\..\..\..\Application\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -383,6 +383,13 @@
       <Groups>
         <Group>
           <GroupName>Application</GroupName>
+          <Files>
+            <File>
+              <FileName>appSimplePic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\Application\src\appSimplePic.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>:STM32CubeMX:Common Sources</GroupName>
