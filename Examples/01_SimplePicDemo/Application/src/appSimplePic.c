@@ -21,20 +21,29 @@ int Init_Thread (void) {
 void Thread (void *argument) {
 
     uint16_t Temp;
-    uint8_t VFD_Grids [7] = {0,0,0,0,0,0, 0};
+    uint8_t VFD_Grids [6] = {0,0,0,0,0,0};
     while (1) {
         
         VFD_Grids[0] = 0x03;
-        for(size_t i = 0; i < 41; i++)
+        //First Send 0th
+        
+        for(size_t i = 0; i < 40; i++)
         {
-            Temp = (VFD_Grids[i/8 + 1] << 8) | VFD_Grids[i/8];
+            Temp = (((uint16_t)VFD_Grids[i/8 + 1]) << 8) | ((uint16_t)(VFD_Grids[i/8]));
+            
             Temp = Temp << 1;
             VFD_Grids[i/8      ] = (uint8_t)  Temp;
+            
             VFD_Grids[i/8 + 1] = (uint8_t) (Temp >> 8);
+            
+            //Cycle Send 1-40th
         }
+        
+        VFD_Grids[5] = VFD_Grids[5] << 1;
+        // 41th Send
+        VFD_Grids[5] = 0x0C;
+        // 42th Send
         VFD_Grids[5] = 0x00;
-        
-        
         
         
         osThreadYield();                            // suspend thread
