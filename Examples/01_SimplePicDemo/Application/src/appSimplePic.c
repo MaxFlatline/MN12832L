@@ -7,7 +7,7 @@
 osThreadId_t tid_Thread;                        // thread id
  
 void Thread (void *argument);                   // thread function
- 
+
 int Init_Thread (void) {
  
   tid_Thread = osThreadNew(Thread, NULL, NULL);
@@ -19,9 +19,24 @@ int Init_Thread (void) {
 }
  
 void Thread (void *argument) {
- 
-  while (1) {
-    ; // Insert thread code here...
-    osThreadYield();                            // suspend thread
-  }
+
+    uint16_t Temp;
+    uint8_t VFD_Grids [7] = {0,0,0,0,0,0, 0};
+    while (1) {
+        
+        VFD_Grids[0] = 0x03;
+        for(size_t i = 0; i < 41; i++)
+        {
+            Temp = (VFD_Grids[i/8 + 1] << 8) | VFD_Grids[i/8];
+            Temp = Temp << 1;
+            VFD_Grids[i/8      ] = (uint8_t)  Temp;
+            VFD_Grids[i/8 + 1] = (uint8_t) (Temp >> 8);
+        }
+        VFD_Grids[5] = 0x00;
+        
+        
+        
+        
+        osThreadYield();                            // suspend thread
+    }
 }

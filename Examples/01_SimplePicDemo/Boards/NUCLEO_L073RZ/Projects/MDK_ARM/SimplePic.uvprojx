@@ -468,7 +468,7 @@
           <targetInfo name="NUCLEO-L073RZ"/>
         </targetInfos>
       </component>
-      <component Cbundle="STM32CubeMX" Cclass="Device" Cgroup="STM32Cube Framework" Csub="STM32CubeMX" Cvendor="Keil" Cversion="1.12.2" condition="STCubeMX" doc="C:/Keil/Packs/Keil/STM32L0xx_DFP/2.3.0/MDK/CubeMX/Documentation/cubemx.html" generated="1" generator="STM32CubeMX" selectable="1">
+      <component Cbundle="STM32CubeMX" Cclass="Device" Cgroup="STM32Cube Framework" Csub="STM32CubeMX" Cvendor="Keil" Cversion="1.12.2" condition="STCubeMX" doc="E:/KeilPacks/Keil/STM32L0xx_DFP/2.3.0/MDK/CubeMX/Documentation/cubemx.html" generated="1" generator="STM32CubeMX" selectable="1">
         <package name="STM32L0xx_DFP" schemaVersion="1.7.28" url="https://www.keil.com/pack/" vendor="Keil" version="2.3.0"/>
         <targetInfos>
           <targetInfo name="NUCLEO-L073RZ"/>
