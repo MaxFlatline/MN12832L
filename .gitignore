@@ -2,6 +2,7 @@
 *.base@*
 *.uvguix.*
 *.uvoptx
+*.scvd
 
 # Backup
 *.bak

@@ -20,6 +20,9 @@
 #define RTE_CMSIS_RTOS2                 /* CMSIS-RTOS2 */
         #define RTE_CMSIS_RTOS2_RTX5            /* CMSIS-RTOS2 Keil RTX5 */
         #define RTE_CMSIS_RTOS2_RTX5_SOURCE     /* CMSIS-RTOS2 Keil RTX5 Source */
+/* Keil::CMSIS Driver:SPI@1.0.0 */
+#define RTE_Drivers_SPI1                /* Driver SPI1 */
+        #define RTE_Drivers_SPI2                /* Driver SPI2 */
 /* Keil::Device&STM32CubeMX:STM32Cube Framework:STM32CubeMX@1.12.2 */
 #define RTE_DEVICE_FRAMEWORK_CUBE_MX
 /* Keil::Device&STM32CubeMX:STM32Cube HAL@1.12.2 */
