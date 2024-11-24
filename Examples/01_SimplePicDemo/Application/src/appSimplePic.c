@@ -125,11 +125,7 @@ void Thread (void *argument) {
     /* Configure the SPI to Master, 8-bit mode @10000 kBits/sec */
     SPIdrv->Control(ARM_SPI_MODE_MASTER | ARM_SPI_CPOL1_CPHA1 | ARM_SPI_LSB_MSB | ARM_SPI_SS_MASTER_UNUSED | ARM_SPI_DATA_BITS(8), 2000000);
     
-    HAL_GPIO_WritePin(VFD_EF_GPIO_Port,VFD_EF_Pin, GPIO_PIN_SET);
-    
-    osDelay(5);
-    
-    HAL_GPIO_WritePin(VFD_HV_GPIO_Port,VFD_HV_Pin, GPIO_PIN_SET);
+
     
     for(int i = 0; i < 24; i++){
         for(int j = 0; j < 24; j++){
@@ -150,21 +146,60 @@ void Thread (void *argument) {
                 // 1) In first cycle we move through all bitmap rows
                 // 2) In second cycle we move through all row's bytes taking 3 at once (5 times, last is special AB grid)
                 // 
-                // first byte of image bitmap
-                VFD_RowData_ABC[0][0]  = ((image[0] & 0x01) == 0x01) << 0; // a0
-                VFD_RowData_ABC[0][0] |= ((image[0] & 0x02) == 0x02) << 2; // b0
-                VFD_RowData_ABC[0][0] |= ((image[0] & 0x04) == 0x04) << 4; // c0
+                // first byte of first row bitmap
+                VFD_RowData_ABC[0][0]  = ((image[0] & 0x80) != 0x80) << 0; // a00
+                VFD_RowData_ABC[0][0] |= ((image[0] & 0x40) != 0x40) << 2; // b00
+                VFD_RowData_ABC[0][0] |= ((image[0] & 0x20) != 0x20) << 4; // c00
+                VFD_RowData_DEF[0][0]  = ((image[0] & 0x10) != 0x10) << 5; // d00
+                VFD_RowData_DEF[0][0] |= ((image[0] & 0x08) != 0x08) << 3; // e00
+                VFD_RowData_DEF[0][0] |= ((image[0] & 0x04) != 0x04) << 1; // f00
                 
-                VFD_RowData_DEF[0][0]  = ((image[0] & 0x08) == 0x08) << 5; // d0
-                VFD_RowData_DEF[0][0] |= ((image[0] & 0x10) == 0x10) << 3; // e0
-                VFD_RowData_DEF[0][0] |= ((image[0] & 0x20) == 0x20) << 1; // f0
+                VFD_RowData_ABC[1][0]  = ((image[0] & 0x02) != 0x02) << 0; // a01
+                VFD_RowData_ABC[1][0] |= ((image[0] & 0x01) != 0x01) << 2; // b01
+//                //Second byte
+//                VFD_RowData_ABC[1][0] |= ((image[1] & 0x80) != 0x80) << 4; // c01
+//                VFD_RowData_DEF[1][0]  = ((image[1] & 0x40) != 0x40) << 5; // d01
+//                VFD_RowData_DEF[1][0] |= ((image[1] & 0x20) != 0x20) << 3; // e01
+//                VFD_RowData_DEF[1][0] |= ((image[1] & 0x10) != 0x10) << 1; // f01
+//                
+//                VFD_RowData_ABC[2][0]  = ((image[1] & 0x08) != 0x08) << 0; // a02
+//                VFD_RowData_ABC[2][0] |= ((image[1] & 0x04) != 0x04) << 2; // b02
+//                VFD_RowData_ABC[2][0] |= ((image[1] & 0x02) != 0x02) << 4; // c02
+//                VFD_RowData_DEF[2][0]  = ((image[1] & 0x01) != 0x01) << 5; // d02
+//                //third byte
+//                VFD_RowData_DEF[2][0] |= ((image[2] & 0x80) != 0x80) << 3; // e02
+//                VFD_RowData_DEF[2][0] |= ((image[2] & 0x40) != 0x40) << 1; // f02
+//                
+//                VFD_RowData_ABC[3][0]  = ((image[2] & 0x20) != 0x20) << 0; // a03
+//                VFD_RowData_ABC[3][0] |= ((image[2] & 0x10) != 0x10) << 2; // b03
+//                VFD_RowData_ABC[3][0] |= ((image[2] & 0x08) != 0x08) << 4; // c03
+//                VFD_RowData_DEF[3][0]  = ((image[2] & 0x04) != 0x04) << 5; // d03
+//                VFD_RowData_DEF[3][0] |= ((image[2] & 0x02) != 0x02) << 3; // e03
+//                VFD_RowData_DEF[3][0] |= ((image[2] & 0x01) != 0x01) << 1; // f03
                 
-                VFD_RowData_ABC[0][0]  = ((image[0] & 0x40) == 0x40) << 6; // a1
-                VFD_RowData_ABC[0][1]  = ((image[0] & 0x01) == 0x01) << 0; // b1
+                //first byte of second row of bitmap
+                VFD_RowData_ABC[0][0] |= ((image[0 + 16] & 0x80) != 0x80) << 6; // a10
+                VFD_RowData_ABC[0][1]  = ((image[0 + 16] & 0x40) != 0x40) << 0; // b10
+                VFD_RowData_ABC[0][1] |= ((image[0 + 16] & 0x20) != 0x20) << 2; // c10
                 
+                VFD_RowData_DEF[0][1]  = ((image[0 + 16] & 0x10) != 0x10) << 3; // d10
+                VFD_RowData_DEF[0][1] |= ((image[0 + 16] & 0x08) != 0x08) << 1; // e10
+                VFD_RowData_DEF[0][0] |= ((image[0 + 16] & 0x04) != 0x04) << 7; // f10
                 
-                //VFD_RowData_ABC[row_cnt]
-                //VFD_RowData_DEF[row_cnt]
+                //VFD_RowData_ABC[1][1]  = ((image[0 + 16] & 0x02) != 0x02) << 0; // a11
+                //VFD_RowData_ABC[1][1] |= ((image[0 + 16] & 0x01) != 0x01) << 2; // b11
+                
+                //first byte of third row of bitmap
+                VFD_RowData_ABC[0][0] |= ((image[0 + 32] & 0x80) != 0x80) << 6; // a10
+                VFD_RowData_ABC[0][1]  = ((image[0 + 32] & 0x40) != 0x40) << 0; // b10
+                VFD_RowData_ABC[0][1] |= ((image[0 + 32] & 0x20) != 0x20) << 2; // c10
+                
+                VFD_RowData_DEF[0][1]  = ((image[0 + 32] & 0x10) != 0x10) << 3; // d10
+                VFD_RowData_DEF[0][1] |= ((image[0 + 32] & 0x08) != 0x08) << 1; // e10
+                VFD_RowData_DEF[0][0] |= ((image[0 + 32] & 0x04) != 0x04) << 7; // f10
+                
+                //VFD_RowData_ABC[1][1]  = ((image[0 + 16] & 0x02) != 0x02) << 0; // a11
+                //VFD_RowData_ABC[1][1] |= ((image[0 + 16] & 0x01) != 0x01) << 2; // b11
 //            }
 
  //       }
@@ -175,7 +210,11 @@ void Thread (void *argument) {
         
 //    }
     
+    HAL_GPIO_WritePin(VFD_EF_GPIO_Port,VFD_EF_Pin, GPIO_PIN_SET);
     
+    osDelay(5);
+    
+    HAL_GPIO_WritePin(VFD_HV_GPIO_Port,VFD_HV_Pin, GPIO_PIN_SET);
     while (1) {
         
         VFD_Grids[0] = 0x03;
