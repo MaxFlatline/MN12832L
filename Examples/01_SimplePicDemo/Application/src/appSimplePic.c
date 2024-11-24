@@ -3,6 +3,8 @@
 #include "cmsis_os2.h"                          // CMSIS RTOS header file
 #include "appSimplePic.h"                     // Application header file
 
+#include "main.h"
+
 #include "Driver_SPI.h"
 /* SPI Driver */
 extern ARM_DRIVER_SPI Driver_SPI1;
@@ -10,8 +12,8 @@ extern ARM_DRIVER_SPI Driver_SPI1;
  *      Thread 1 'Thread_Name': Sample thread
  *---------------------------------------------------------------------------*/
  
-uint8_t VFD_RowData_DEF[21] [24];
-uint8_t VFD_RowData_ABC[21] [24];
+uint8_t VFD_RowData_DEF[24] [24];
+uint8_t VFD_RowData_ABC[24] [24];
 // const uint16_t image_size PROGMEM = 512;
 const uint8_t image[512] = {
   0b11111000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00011111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111,
@@ -49,11 +51,8 @@ const uint8_t image[512] = {
 };
 
 osThreadId_t tid_Thread;                        // thread id
- 
+
 void Thread (void *argument);                   // thread function
-
-
-uint8_t VFD_Dummy[30] = {0xFF};
 
 void VFD_SPI_callback(uint32_t event)
 {
@@ -118,44 +117,79 @@ void Thread (void *argument) {
     }
 #endif
  
-    for(int i = 0; i < 30; i++)
-    {
-        VFD_Dummy[i] = 0xff;
-    }
+    
     /* Initialize the SPI driver */
     SPIdrv->Initialize(VFD_SPI_callback);
     /* Power up the SPI peripheral */
     SPIdrv->PowerControl(ARM_POWER_FULL);
     /* Configure the SPI to Master, 8-bit mode @10000 kBits/sec */
-    SPIdrv->Control(ARM_SPI_MODE_MASTER | ARM_SPI_CPOL1_CPHA1 | ARM_SPI_MSB_LSB | ARM_SPI_SS_MASTER_UNUSED | ARM_SPI_DATA_BITS(8), 2000000);
- 
-
+    SPIdrv->Control(ARM_SPI_MODE_MASTER | ARM_SPI_CPOL1_CPHA1 | ARM_SPI_LSB_MSB | ARM_SPI_SS_MASTER_UNUSED | ARM_SPI_DATA_BITS(8), 2000000);
     
-    for (size_t i = 0; i < 32; i++){        // Cycle for original frame's rows
-        for (size_t j = 0; j < 15; j++){    // Cycle for original frame's columns
-            RowTemp =(((uint32_t)image[j + 2]) << 16) | (((uint32_t)image[j + 1]) << 8) | (uint32_t)image[j];
-            for (size_t k = 0; k < 24; k=k+6){// Cycle for individual bits
-                VFD_RowData_ABC[row_cnt][0] = ((RowTemp & 0x01 << k) == (1 << k) )  ;
+    HAL_GPIO_WritePin(VFD_EF_GPIO_Port,VFD_EF_Pin, GPIO_PIN_SET);
+    
+    osDelay(5);
+    
+    HAL_GPIO_WritePin(VFD_HV_GPIO_Port,VFD_HV_Pin, GPIO_PIN_SET);
+    
+    for(int i = 0; i < 24; i++){
+        for(int j = 0; j < 24; j++){
+            VFD_RowData_DEF[i][j] = 0x00;
+            VFD_RowData_ABC[i][j] = 0x00;
+        }
+    }
+    
+//    for (size_t i = 0; i < 32; i++){        // Cycle for original frame's rows
+//        for (size_t j = 0; j < 15; j++){    // Cycle for original frame's columns
+            //RowTemp =(((uint32_t)image[j + 2]) << 16) | (((uint32_t)image[j + 1]) << 8) | (uint32_t)image[j];
+            //for (size_t k = 0; k < 24; k=k+6){// Cycle for individual bits
+                //VFD_RowData_ABC[row_cnt][0] = ((RowTemp & 0x01 << k) == (1 << k) )  ;
+                
+                
+                // 0B'abcdefab 0B'cdefabcd 0B'efabcdef - 4 rows of=== abcdef=abcdef=abcdef=abcdef ===
+                // Every row of bitmap converted to 4 rows of gridmap 5 times. 
+                // 1) In first cycle we move through all bitmap rows
+                // 2) In second cycle we move through all row's bytes taking 3 at once (5 times, last is special AB grid)
+                // 
+                // first byte of image bitmap
+                VFD_RowData_ABC[0][0]  = ((image[0] & 0x01) == 0x01) << 0; // a0
+                VFD_RowData_ABC[0][0] |= ((image[0] & 0x02) == 0x02) << 2; // b0
+                VFD_RowData_ABC[0][0] |= ((image[0] & 0x04) == 0x04) << 4; // c0
+                
+                VFD_RowData_DEF[0][0]  = ((image[0] & 0x08) == 0x08) << 5; // d0
+                VFD_RowData_DEF[0][0] |= ((image[0] & 0x10) == 0x10) << 3; // e0
+                VFD_RowData_DEF[0][0] |= ((image[0] & 0x20) == 0x20) << 1; // f0
+                
+                VFD_RowData_ABC[0][0]  = ((image[0] & 0x40) == 0x40) << 6; // a1
+                VFD_RowData_ABC[0][1]  = ((image[0] & 0x01) == 0x01) << 0; // b1
+                
                 
                 //VFD_RowData_ABC[row_cnt]
                 //VFD_RowData_DEF[row_cnt]
-            }
+//            }
 
-        }
+ //       }
         
         { // Last column
             
         }
         
-    }
+//    }
     
     
     while (1) {
         
         VFD_Grids[0] = 0x03;
         //First Send 0th
+        
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_RESET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_RESET);
         /* Transmit some data */
-        SPIdrv->Send(VFD_Dummy, 24);
+        SPIdrv->Send(VFD_RowData_ABC[0], 24);
         /* Wait for completion */
         flags = osThreadFlagsWait(0x01,osFlagsWaitAny,osWaitForever);
         if (flags == osFlagsErrorTimeout) {
@@ -168,7 +202,7 @@ void Thread (void *argument) {
         if (flags == osFlagsErrorTimeout) {
             __BKPT(0); /* Timeout error: Call debugger */
         }
-        for(size_t i = 0; i < 40; i++)
+        for(size_t i = 1; i < 40; i++)
         {
             Temp = (((uint16_t)VFD_Grids[i/8 + 1]) << 8) | ((uint16_t)(VFD_Grids[i/8]));
             
@@ -178,8 +212,21 @@ void Thread (void *argument) {
             VFD_Grids[i/8 + 1] = (uint8_t) (Temp >> 8);
             
             //Cycle Send 1-40th
+            HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_SET);
+            __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+            HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_SET);
+            __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+            HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_RESET);
+            __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+            HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_RESET);
             /* Transmit some data */
-            SPIdrv->Send(VFD_Dummy, 24);
+            if(i & (size_t)0x01)
+            {
+                SPIdrv->Send(VFD_RowData_DEF[i/2], 24);
+            }
+            else{
+                SPIdrv->Send(VFD_RowData_ABC[i/2], 24);
+            }
             /* Wait for completion */
             flags = osThreadFlagsWait(0x01,osFlagsWaitAny,osWaitForever);
             if (flags == osFlagsErrorTimeout) {
@@ -196,8 +243,15 @@ void Thread (void *argument) {
         
         VFD_Grids[5] = VFD_Grids[5] << 1;
         // 41th Send
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_RESET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_RESET);
         /* Transmit some data */
-        SPIdrv->Send(VFD_Dummy, 24);
+        SPIdrv->Send(VFD_RowData_DEF[20], 24);
         /* Wait for completion */
         flags = osThreadFlagsWait(0x01,osFlagsWaitAny,osWaitForever);
         if (flags == osFlagsErrorTimeout) {
@@ -212,8 +266,15 @@ void Thread (void *argument) {
         }
         VFD_Grids[5] = 0x0C;
         // 42th Send
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_SET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_LAT_GPIO_Port,VFD_LAT_Pin, GPIO_PIN_RESET);
+        __NOP();__NOP();__NOP();__NOP();__NOP();__NOP();
+        HAL_GPIO_WritePin(VFD_BLK_GPIO_Port,VFD_BLK_Pin, GPIO_PIN_RESET);
         /* Transmit some data */
-        SPIdrv->Send(VFD_Dummy, 24);
+        SPIdrv->Send(VFD_RowData_ABC[20], 24);
         /* Wait for completion */
         flags = osThreadFlagsWait(0x01,osFlagsWaitAny,osWaitForever);
         if (flags == osFlagsErrorTimeout) {
